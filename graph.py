@@ -1,0 +1,125 @@
+from dotenv import load_dotenv
+from typing import TypedDict
+from langchain_huggingface import HuggingFaceEndpoint , ChatHuggingFace
+from langchain.agents import create_agent
+from langchain_tavily import TavilySearch
+from langchain_community.tools import StackExchangeTool
+from langchain_community.utilities import StackExchangeAPIWrapper
+from langchain_community.tools import YouTubeSearchTool
+from langgraph.graph import StateGraph , START , END
+
+# Load Environment Variables
+load_dotenv()
+
+# Model
+llm=HuggingFaceEndpoint(repo_id="Qwen/Qwen3-4B-Instruct-2507")
+model = ChatHuggingFace(llm=llm)
+
+# Define Tools
+
+#TavilySearch for General web search for current info, articles, and broad topics
+web_search_tool = TavilySearch(
+    max_results=5,
+    search_depth="basic",
+    include_raw_content=False
+)
+
+
+#StackExchangeTool for queries regarding programming errors
+stackexchange_tool = StackExchangeTool(api_wrapper=StackExchangeAPIWrapper())
+
+# YoutubeSearchTool for queries regarding tutorial/how-to videos - returns titles + links
+youtube_search_tool = YouTubeSearchTool()
+
+
+# All available tools
+tools = [web_search_tool,stackexchange_tool,youtube_search_tool]
+
+
+# State
+class State(TypedDict):
+    user_query : str
+    data : str
+    summary : str
+
+# Agent
+agent_with_tools = create_agent(
+    model=model,
+    tools=tools,
+    system_prompt="""
+
+You are an autonomous research agent.
+
+Your job is to gather reliable information for the user's query.
+Use available tools, explore relevant sources, and collect:
+- Key factual information
+- Source titles and URLs
+- Supporting content
+
+Present the collected data as raw findings only. Do not summarize, 
+interpret, or draw conclusions — a separate step will handle that.
+"""
+)
+
+
+
+# Nodes
+def research_agent(state:State)-> dict:
+    """Gathers Information from external sources based on user query """
+
+    response= agent_with_tools.invoke({
+        "messages":[
+            {"role":"user","content":state["user_query"]}
+        ]
+    })
+    print([tc["name"] for m in response["messages"] if getattr(m, "tool_calls", None) for tc in m.tool_calls])
+    return {"data":response["messages"][-1].content}
+
+
+
+def summarizer_agent(state:State)->dict:
+    """Removes irrelevant information and generates a final summary """
+
+    prompt = f"""
+    You are a research synthesizer.
+
+    Analyze the research data provided by the Research Agent.
+    Remove irrelevant and duplicate information, combine related findings,
+    and produce an accurate, concise summary.
+
+    Include:
+    1. Key Points
+    2. Important Findings
+    3. References / Sources
+    4. Actionable Insights (if applicable)
+
+    Use only the provided research data and clearly include source titles and URLs.
+
+    data : {state["data"]}
+
+    """
+    response = model.invoke(prompt)
+    return {"summary":response.content}
+    
+
+
+# Intialize Graph
+graph = StateGraph(State)
+
+# Add Nodes
+graph.add_node("research_agent",research_agent)
+graph.add_node("summarizer_agent",summarizer_agent)
+
+# Add Edges
+graph.add_edge(START , "research_agent")
+graph.add_edge("research_agent", "summarizer_agent")
+graph.add_edge("summarizer_agent",END)
+
+# Compile Graph
+app = graph.compile()
+
+# User query
+result = app.invoke({"user_query": "Find a YouTube tutorial video explaining Retrieval-Augmented Generation (RAG)"})
+
+# Result
+print(result["summary"])

@@ -1,0 +1,9 @@
+langgraph
+langchain
+langchain-community
+python-dotenv
+requests
+langchain_huggingface
+langchain-tavily
+stackapi
+youtube_search
