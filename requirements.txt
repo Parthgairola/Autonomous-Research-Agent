@@ -7,3 +7,4 @@ langchain_huggingface
 langchain-tavily
 stackapi
 youtube_search
+fpdf

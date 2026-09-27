@@ -7,6 +7,7 @@ from langchain_community.tools import StackExchangeTool
 from langchain_community.utilities import StackExchangeAPIWrapper
 from langchain_community.tools import YouTubeSearchTool
 from langgraph.graph import StateGraph , START , END
+from fpdf import FPDF
 
 # Load Environment Variables
 load_dotenv()
@@ -84,11 +85,11 @@ def summarizer_agent(state:State)->dict:
     """Removes irrelevant information and generates a final summary """
 
     prompt = f"""
-    You are a research synthesizer.
+    You are an autonomous research summarizer.
 
-    Analyze the research data provided by the Research Agent.
-    Remove irrelevant and duplicate information, combine related findings,
-    and produce an accurate, concise summary.
+    Analyze the data and independently identify the most relevant
+    information for the user's query. Remove irrelevant and duplicate content,
+    combine related findings, and produce an accurate, concise summary.
 
     Include:
     1. Key Points
@@ -96,7 +97,9 @@ def summarizer_agent(state:State)->dict:
     3. References / Sources
     4. Actionable Insights (if applicable)
 
-    Use only the provided research data and clearly include source titles and URLs.
+    Use only the provided data. Do not invent facts or sources.
+
+    Return clean plain text only. Do not use Markdown formatting.
 
     data : {state["data"]}
 
@@ -164,3 +167,24 @@ result = app.invoke({"user_query": "Best Places to Visit in Dehradun! "})
 
 # Result
 print(result["summary"])
+
+# PDF Generator
+def generate_pdf(summary):
+    """Generates PDF of the summary."""
+
+    pdf = FPDF()
+
+    pdf.add_page()
+
+    pdf.set_font("Arial", size=12)
+
+    # Handle unsupported characters
+    summary = summary.encode("latin-1", "replace").decode("latin-1")
+
+    # Add summary to PDF
+    pdf.multi_cell(0, 8, summary)
+
+    # Save PDF
+    pdf.output("summary.pdf")
+
+generate_pdf(result["summary"])
