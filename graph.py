@@ -67,18 +67,23 @@ agent_with_tools = create_agent(
 def research_agent(state:State)-> dict:
     """Gathers Information from external sources based on user query """
 
+    print("\nResearch Agent: Gathering information...")
+
+
     response= agent_with_tools.invoke({
         "messages":[
             {"role":"user","content":state["user_query"]}
         ]
     })
-
+    print("Research completed.")
     return {"data":response["messages"][-1].content}
 
 
 # Summarizer Agent
 def summarizer_agent(state:State)->dict:
     """Removes irrelevant information and generates a final summary """
+
+    print("Summarizer Agent: Creating summary...")
 
     prompt = f"""
     You are an autonomous research summarizer.
@@ -101,12 +106,16 @@ def summarizer_agent(state:State)->dict:
 
     """
     response = model.invoke(prompt)
+
+    print("Summary generated.")
     return {"summary":response.content}
     
 
 # Review Agent
 def review_agent(state:State)->dict:
     """"Checks whether Summary is relevant to user query or not  """
+
+    print("Review Agent: Reviewing summary...")
 
     prompt = f"""
     Review the summary against the user's original query.
@@ -128,6 +137,8 @@ def review_agent(state:State)->dict:
     """
 
     response = model.invoke(prompt)
+
+    print(f"Review result: {response.content}")
     return {"approved":response.content}
 
 

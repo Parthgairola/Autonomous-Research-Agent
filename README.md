@@ -7,7 +7,10 @@ The goal of this project was to build a practical autonomous workflow using Lang
 
 ## 2. Live Demo
 
-👉 [Try the application](https://autonomous-research-agent55.streamlit.app/)
+👉 [Try the application](https://autonomous-research-agent55.streamlit.app/) <br>
+
+⚠️ **Note:** The live demo uses limited API credits. Please avoid sending multiple requests unnecessarily.
+
 
 
 
