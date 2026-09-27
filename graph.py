@@ -41,6 +41,8 @@ class State(TypedDict):
     user_query : str
     data : str
     summary : str
+    approved : str
+    feedback :str
 
 # Agent
 agent_with_tools = create_agent(
@@ -48,22 +50,23 @@ agent_with_tools = create_agent(
     tools=tools,
     system_prompt="""
 
-You are an autonomous research agent.
+    You are an autonomous research agent.
 
-Your job is to gather reliable information for the user's query.
-Use available tools, explore relevant sources, and collect:
-- Key factual information
-- Source titles and URLs
-- Supporting content
+    Your job is to gather reliable information for the user's query.
+    Use available tools, explore relevant sources, and collect:
+    - Key factual information
+    - Source titles and URLs
+    - Supporting content
 
-Present the collected data as raw findings only. Do not summarize, 
-interpret, or draw conclusions — a separate step will handle that.
-"""
+    Present the collected data as raw findings only. Do not summarize, 
+    interpret, or draw conclusions — a separate step will handle that.
+    """
 )
 
 
-
 # Nodes
+
+# Research Agent
 def research_agent(state:State)-> dict:
     """Gathers Information from external sources based on user query """
 
@@ -72,11 +75,11 @@ def research_agent(state:State)-> dict:
             {"role":"user","content":state["user_query"]}
         ]
     })
-    print([tc["name"] for m in response["messages"] if getattr(m, "tool_calls", None) for tc in m.tool_calls])
+
     return {"data":response["messages"][-1].content}
 
 
-
+# Summarizer Agent
 def summarizer_agent(state:State)->dict:
     """Removes irrelevant information and generates a final summary """
 
@@ -102,6 +105,42 @@ def summarizer_agent(state:State)->dict:
     return {"summary":response.content}
     
 
+# Review Agent
+def review_agent(state:State)->dict:
+    """"Checks whether Summary is relevant to user query or not  """
+
+    prompt = f"""
+    Review the summary against the user's original query.
+
+    Your response MUST be exactly one word: YES or NO.
+
+    Return YES if the summary is relevant, directly answers the user's query,
+    and contains sufficient information.
+
+    Return NO if the summary is irrelevant, incomplete,
+    or does not directly answer the user's query.
+
+    User Query:
+    {state["user_query"]}
+
+    Summary:
+    {state["summary"]}
+
+    """
+
+    response = model.invoke(prompt)
+    return {"approved":response.content}
+
+
+# Router
+def router(state:State):
+    """Routes the workflow based on the review agent's YES/NO decision """
+
+    if state["approved"]=="YES":
+        return "approved"
+    else :
+        return "revise"
+
 
 # Intialize Graph
 graph = StateGraph(State)
@@ -109,17 +148,19 @@ graph = StateGraph(State)
 # Add Nodes
 graph.add_node("research_agent",research_agent)
 graph.add_node("summarizer_agent",summarizer_agent)
+graph.add_node("review_agent",review_agent)
 
 # Add Edges
 graph.add_edge(START , "research_agent")
 graph.add_edge("research_agent", "summarizer_agent")
-graph.add_edge("summarizer_agent",END)
+graph.add_edge("summarizer_agent", "review_agent")
+graph.add_conditional_edges("review_agent",router,{"approved":END,"revise":"summarizer_agent"})
 
 # Compile Graph
 app = graph.compile()
 
 # User query
-result = app.invoke({"user_query": "Find a YouTube tutorial video explaining Retrieval-Augmented Generation (RAG)"})
+result = app.invoke({"user_query": "Best Places to Visit in Dehradun! "})
 
 # Result
 print(result["summary"])
