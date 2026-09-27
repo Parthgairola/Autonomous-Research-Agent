@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from typing import TypedDict
-from langchain_huggingface import HuggingFaceEndpoint , ChatHuggingFace
+from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from langchain_tavily import TavilySearch
 from langchain_community.tools import StackExchangeTool
@@ -13,11 +13,9 @@ from fpdf import FPDF
 load_dotenv()
 
 # Model
-llm=HuggingFaceEndpoint(repo_id="Qwen/Qwen3-4B-Instruct-2507")
-model = ChatHuggingFace(llm=llm)
+model = ChatGroq(model="openai/gpt-oss-20b",temperature=0)
 
-# Define Tools
-
+#Tools
 #TavilySearch for General web search for current info, articles, and broad topics
 web_search_tool = TavilySearch(
     max_results=5,
@@ -25,19 +23,17 @@ web_search_tool = TavilySearch(
     include_raw_content=False
 )
 
-
 #StackExchangeTool for queries regarding programming errors
 stackexchange_tool = StackExchangeTool(api_wrapper=StackExchangeAPIWrapper())
 
 # YoutubeSearchTool for queries regarding tutorial/how-to videos - returns titles + links
 youtube_search_tool = YouTubeSearchTool()
 
-
 # All available tools
 tools = [web_search_tool,stackexchange_tool,youtube_search_tool]
 
 
-# State
+# States
 class State(TypedDict):
     user_query : str
     data : str
@@ -162,12 +158,6 @@ graph.add_conditional_edges("review_agent",router,{"approved":END,"revise":"summ
 # Compile Graph
 app = graph.compile()
 
-# User query
-result = app.invoke({"user_query": "Best Places to Visit in Dehradun! "})
-
-# Result
-print(result["summary"])
-
 # PDF Generator
 def generate_pdf(summary):
     """Generates PDF of the summary."""
@@ -186,5 +176,3 @@ def generate_pdf(summary):
 
     # Save PDF
     pdf.output("summary.pdf")
-
-generate_pdf(result["summary"])

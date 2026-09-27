@@ -2,9 +2,9 @@ langgraph
 langchain
 langchain-community
 python-dotenv
-requests
-langchain_huggingface
+langchain-groq
 langchain-tavily
 stackapi
 youtube_search
 fpdf
+streamlit
