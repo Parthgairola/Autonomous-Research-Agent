@@ -7,7 +7,7 @@ The goal of this project was to build a practical autonomous workflow using Lang
 
 ## 2. Live Demo
 
-👉 [Try the application](https://autonomous-research-agent55.streamlit.app/) <br>
+[Try the application](https://autonomous-research-agent55.streamlit.app/) <br>
 
 ⚠️ **Note:** The live demo uses limited API credits. Please avoid sending multiple requests unnecessarily.
 
@@ -18,13 +18,11 @@ The goal of this project was to build a practical autonomous workflow using Lang
 
 Normally, researching a topic involves searching through different sources, going through the information, removing unnecessary content, and checking whether the final answer actually answers the question.
 
-This project automates that process using three agents:
+This project automates that process using a LangGraph workflow with one research agent and two LLM-powered nodes:
 
-1. **Research Agent** – searches for relevant information using available tools.
-
-2. **Summarizer Agent** – removes unnecessary information and combines the useful findings into a concise summary.
-
-3. **Review Agent** – checks whether the generated summary actually answers the user's original question.
+**Research Agent** – searches for relevant information using available tools.  
+**Summarization Node** – combines the collected information into a concise summary.  
+**Review Node** – checks whether the summary answers the user's query.
 
 If the review fails, the workflow sends the summary back for revision instead of directly returning it.
 
