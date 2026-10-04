@@ -79,11 +79,11 @@ def research_agent(state:State)-> dict:
     return {"data":response["messages"][-1].content}
 
 
-# Summarizer Agent
-def summarizer_agent(state:State)->dict:
+# Summarizer Node
+def summarizer_node(state:State)->dict:
     """Removes irrelevant information and generates a final summary """
 
-    print("Summarizer Agent: Creating summary...")
+    print("Summarizer Node: Creating summary...")
 
     prompt = f"""
     You are an autonomous research summarizer.
@@ -111,11 +111,11 @@ def summarizer_agent(state:State)->dict:
     return {"summary":response.content}
     
 
-# Review Agent
-def review_agent(state:State)->dict:
+# Review Node
+def review_node(state:State)->dict:
     """"Checks whether Summary is relevant to user query or not  """
 
-    print("Review Agent: Reviewing summary...")
+    print("Review Node: Reviewing summary...")
 
     prompt = f"""
     Review the summary against the user's original query.
@@ -144,7 +144,7 @@ def review_agent(state:State)->dict:
 
 # Router
 def router(state:State):
-    """Routes the workflow based on the review agent's YES/NO decision """
+    """Routes the workflow based on the review node's YES/NO decision """
 
     if state["approved"]=="YES":
         return "approved"
@@ -157,14 +157,14 @@ graph = StateGraph(State)
 
 # Add Nodes
 graph.add_node("research_agent",research_agent)
-graph.add_node("summarizer_agent",summarizer_agent)
-graph.add_node("review_agent",review_agent)
+graph.add_node("summarizer_node",summarizer_node)
+graph.add_node("review_node",review_node)
 
 # Add Edges
 graph.add_edge(START , "research_agent")
-graph.add_edge("research_agent", "summarizer_agent")
-graph.add_edge("summarizer_agent", "review_agent")
-graph.add_conditional_edges("review_agent",router,{"approved":END,"revise":"summarizer_agent"})
+graph.add_edge("research_agent", "summarizer_node")
+graph.add_edge("summarizer_node", "review_node")
+graph.add_conditional_edges("review_node",router,{"approved":END,"revise":"summarizer_node"})
 
 # Compile Graph
 app = graph.compile()
