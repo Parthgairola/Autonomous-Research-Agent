@@ -39,7 +39,7 @@ class State(TypedDict):
     data : str
     summary : str
     approved : str
-    feedback :str
+    attempt : int
 
 # Agent
 agent_with_tools = create_agent(
@@ -83,32 +83,38 @@ def research_agent(state:State)-> dict:
 def summarizer_node(state:State)->dict:
     """Removes irrelevant information and generates a final summary """
 
-    print("Summarizer Node: Creating summary...")
+    attempt = state.get("attempt", 0) + 1
 
-    prompt = f"""
-    You are an autonomous research summarizer.
+    if attempt > 4:
+        return {"summary": state["summary"], "attempt": attempt}
 
-    Analyze the data and independently identify the most relevant
-    information for the user's query. Remove irrelevant and duplicate content,
-    combine related findings, and produce an accurate, concise summary.
+    else:
+        print(f"Summarizer Node: Creating summary - Attempt {attempt}")
 
-    Include:
-    1. Key Points
-    2. Important Findings
-    3. References / Sources
-    4. Actionable Insights (if applicable)
+        prompt = f"""
+        You are an autonomous research summarizer.
 
-    Use only the provided data. Do not invent facts or sources.
+        Analyze the data and independently identify the most relevant
+        information for the user's query. Remove irrelevant and duplicate content,
+        combine related findings, and produce an accurate, concise summary.
 
-    Return clean plain text only. Do not use Markdown formatting.
+        Include:
+        1. Key Points
+        2. Important Findings
+        3. References / Sources
+        4. Actionable Insights (if applicable)
 
-    data : {state["data"]}
+        Use only the provided data. Do not invent facts or sources.
 
-    """
-    response = model.invoke(prompt)
+        Return clean plain text only. Do not use Markdown formatting.
 
-    print("Summary generated.")
-    return {"summary":response.content}
+        data : {state["data"]}
+
+        """
+        response = model.invoke(prompt)
+
+        print("Summary generated.")
+        return {"summary": response.content, "attempt": attempt}
     
 
 # Review Node
@@ -120,13 +126,12 @@ def review_node(state:State)->dict:
     prompt = f"""
     Review the summary against the user's original query.
 
-    Your response MUST be exactly one word: YES or NO.
+    If the summary is relevant, directly answers the user's query,
+    and contains sufficient information, return ONLY:
+    YES
 
-    Return YES if the summary is relevant, directly answers the user's query,
-    and contains sufficient information.
-
-    Return NO if the summary is irrelevant, incomplete,
-    or does not directly answer the user's query.
+    If not, return:
+    NO: followed by a short description of what needs improvement.
 
     User Query:
     {state["user_query"]}
@@ -146,9 +151,11 @@ def review_node(state:State)->dict:
 def router(state:State):
     """Routes the workflow based on the review node's YES/NO decision """
 
-    if state["approved"]=="YES":
+    if state["attempt"] > 3:
         return "approved"
-    else :
+    elif state["approved"] == "YES":
+        return "approved"
+    else:
         return "revise"
 
 
