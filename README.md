@@ -1,6 +1,6 @@
 # 🔎 Autonomous Research Agent
 
-An AI-powered research assistant that can take a topic, research it using multiple sources, summarize the findings, and review the final answer before showing it to the user.
+An AI-powered research assistant that can take a topic, research it using web search, summarize the findings, and review the final answer before showing it to the user.
 
 The goal of this project was to build a practical autonomous workflow using LangGraph instead of making a single prompt chatbot.
 
@@ -12,28 +12,23 @@ The goal of this project was to build a practical autonomous workflow using Lang
 ⚠️ **Note:** The live demo uses limited API credits. Please avoid sending multiple requests unnecessarily.
 
 
-
-
 ## 3. About the Project
 
 Normally, researching a topic involves searching through different sources, going through the information, removing unnecessary content, and checking whether the final answer actually answers the question.
 
 This project automates that process using a LangGraph workflow with one research agent and two LLM-powered nodes:
 
-**Research Agent** – searches for relevant information using available tools.  
+**Research Agent** – searches the web for relevant information using Tavily.  
 **Summarization Node** – combines the collected information into a concise summary.  
 **Review Node** – checks whether the summary answers the user's query.
 
-If the review fails, the workflow sends the summary back for revision instead of directly returning it.
+If the review fails, the workflow sends the summary back for revision (up to 2 retries) instead of directly returning it.
 
 The final summary can also be downloaded as a PDF.
-
-
 
 ## 4. App Architecture
 
 ![App Architecture](assets/architecture.png)
-
 
 
 ## 5. Preview
@@ -57,9 +52,6 @@ The final summary can also be downloaded as a PDF.
 ![Development Journey](assets/development_journey.png)
 
 
-
-
-
 ## 7. Technologies Used
 
 - Python
@@ -67,8 +59,6 @@ The final summary can also be downloaded as a PDF.
 - LangChain
 - Groq
 - Tavily
-- Stack Exchange
-- YouTube Search
 - Streamlit
 - FPDF
 - Docker
@@ -120,3 +110,5 @@ Autonomous-Research-Agent/
 ├── .dockerignore
 ├── .gitignore
 └── README.md
+
+```
