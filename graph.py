@@ -3,9 +3,6 @@ from typing import TypedDict
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from langchain_tavily import TavilySearch
-from langchain_community.tools import StackExchangeTool
-from langchain_community.utilities import StackExchangeAPIWrapper
-from langchain_community.tools import YouTubeSearchTool
 from langgraph.graph import StateGraph , START , END
 from fpdf import FPDF
 
@@ -18,19 +15,14 @@ model = ChatGroq(model="openai/gpt-oss-20b",temperature=0)
 #Tools
 #TavilySearch for General web search for current info, articles, and broad topics
 web_search_tool = TavilySearch(
-    max_results=5,
+    max_results=2,
     search_depth="basic",
     include_raw_content=False
 )
 
-#StackExchangeTool for queries regarding programming errors
-stackexchange_tool = StackExchangeTool(api_wrapper=StackExchangeAPIWrapper())
-
-# YoutubeSearchTool for queries regarding tutorial/how-to videos - returns titles + links
-youtube_search_tool = YouTubeSearchTool()
 
 # All available tools
-tools = [web_search_tool,stackexchange_tool,youtube_search_tool]
+tools = [web_search_tool]
 
 
 # States
@@ -57,6 +49,7 @@ agent_with_tools = create_agent(
 
     Present the collected data as raw findings only. Do not summarize, 
     interpret, or draw conclusions — a separate step will handle that.
+    Use at most 2 search tool calls, then stop searching and present your findings.
     """
 )
 
@@ -74,7 +67,7 @@ def research_agent(state:State)-> dict:
         "messages":[
             {"role":"user","content":state["user_query"]}
         ]
-    })
+    },config={"recursion_limit":15})
     print("Research completed.")
     return {"data":response["messages"][-1].content}
 
