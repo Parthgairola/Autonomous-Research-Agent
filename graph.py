@@ -85,13 +85,10 @@ def summarizer_node(state:State)->dict:
 
     attempt = state.get("attempt", 0) + 1
 
-    if attempt > 4:
-        return {"summary": state["summary"], "attempt": attempt}
 
-    else:
-        print(f"Summarizer Node: Creating summary - Attempt {attempt}")
+    print(f"Summarizer Node: Creating summary - Attempt {attempt}")
 
-        prompt = f"""
+    prompt = f"""
         You are an autonomous research summarizer.
 
         Analyze the data and independently identify the most relevant
@@ -111,10 +108,10 @@ def summarizer_node(state:State)->dict:
         data : {state["data"]}
 
         """
-        response = model.invoke(prompt)
+    response = model.invoke(prompt)
 
-        print("Summary generated.")
-        return {"summary": response.content, "attempt": attempt}
+    print("Summary generated.")
+    return {"summary": response.content, "attempt": attempt}
     
 
 # Review Node
@@ -151,7 +148,7 @@ def review_node(state:State)->dict:
 def router(state:State):
     """Routes the workflow based on the review node's YES/NO decision """
 
-    if state["attempt"] > 3:
+    if state["attempt"] > 2:
         return "approved"
     elif state["approved"] == "YES":
         return "approved"
