@@ -57,19 +57,36 @@ agent_with_tools = create_agent(
 # Nodes
 
 # Research Agent
-def research_agent(state:State)-> dict:
-    """Gathers Information from external sources based on user query """
+
+def research_agent(state: State) -> dict:
 
     print("\nResearch Agent: Gathering information...")
 
+    prompt = f"""
+    Original research query:
+    {state['user_query']}
 
-    response= agent_with_tools.invoke({
-        "messages":[
-            {"role":"user","content":state["user_query"]}
-        ]
-    },config={"recursion_limit":15})
+    Previous research findings:
+    {state.get('data', '')}
+
+    Reviewer feedback:
+    {state.get('approved', '')}
+
+    Continue researching to address the missing information.
+    Use at most 2 search tool calls.
+    Return all relevant findings.
+    """
+
+    response = agent_with_tools.invoke({
+        "messages": [{"role": "user", "content": prompt}]
+    }, config={"recursion_limit": 15})
+
     print("Research completed.")
-    return {"data":response["messages"][-1].content}
+
+    new_data = response["messages"][-1].content
+
+    return {"data": state.get("data", "") + "\n\n" + new_data}
+
 
 
 # Summarizer Node
@@ -161,7 +178,7 @@ graph.add_node("review_node",review_node)
 graph.add_edge(START , "research_agent")
 graph.add_edge("research_agent", "summarizer_node")
 graph.add_edge("summarizer_node", "review_node")
-graph.add_conditional_edges("review_node",router,{"approved":END,"revise":"summarizer_node"})
+graph.add_conditional_edges("review_node",router,{"approved": END, "revise": "research_agent"})
 
 # Compile Graph
 app = graph.compile()
