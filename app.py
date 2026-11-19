@@ -1,8 +1,17 @@
 # Import Streamlit for creating UI
 import streamlit as st
 
+# Import time for the line by line delay
+import time
+
 # Import graph and pdf generating function from graph.py 
 from graph import app, generate_pdf
+
+# Streams text line by line
+def stream_lines(text):
+    for line in text.split("\n"):
+        yield line + "\n"
+        time.sleep(0.15)
 
 # Agent Image
 st.image("assets/agent_image.png", use_container_width=True)
@@ -23,26 +32,49 @@ st.write(
 query = st.chat_input("What would you like to explore?")
 
 if query:
-        # Loader
-        with st.spinner("🌐 Gathering information , 📋 Synthesizing findings , 🔎 Validating results......"):
 
-            result = app.invoke({
-                "user_query": query
-            })
+    result = {}
 
-        st.subheader("📄 Research Summary")
-        st.write(result["summary"])
+    # Live progress of each node
+    with st.status("Researching...", expanded=True) as status:
 
-        # PDF Generator
-        generate_pdf(result["summary"])
+        for event in app.stream(
+            {"user_query": query},
+            stream_mode="updates"
+        ):
+            for node, output in event.items():
 
-        # PDF Downloader
-        with open("summary.pdf", "rb") as file:
+                if node == "research_agent":
+                    st.write("🌐 Research Agent: gathered information")
 
-            # PDF Download Button
-            st.download_button(
-                label="📄 Download PDF",
-                data=file,
-                file_name="research_report.pdf",
-                mime="application/pdf"
-            )
+                elif node == "summarizer_node":
+                    st.write("📋 Summarizer Agent: synthesized findings")
+
+                elif node == "review_node":
+                    decision = output.get("approved", "").strip()
+
+                    if decision.startswith("YES"):
+                        st.write("✅ Review Agent: approved the summary")
+                    else:
+                        st.write("🔄 Review Agent: needs improvement, retrying")
+
+                result.update(output)
+
+        status.update(label="Research complete", state="complete", expanded=False)
+
+    st.subheader("📄 Research Summary")
+    st.write_stream(stream_lines(result["summary"]))
+
+    # PDF Generator
+    generate_pdf(result["summary"])
+
+    # PDF Downloader
+    with open("summary.pdf", "rb") as file:
+
+        # PDF Download Button
+        st.download_button(
+            label="📄 Download PDF",
+            data=file,
+            file_name="research_report.pdf",
+            mime="application/pdf"
+        )
