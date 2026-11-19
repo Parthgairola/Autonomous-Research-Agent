@@ -9,8 +9,7 @@ The goal of this project was to build a practical autonomous workflow using Lang
 
 [Try the application](https://autonomous-research-agent55.streamlit.app/) <br>
 
-⚠️ **Note:** The live demo uses limited API credits. Please avoid sending multiple requests unnecessarily.
-
+⚠️ **Note:** Hosted on Streamlit Community Cloud. Initial loading may take 30–60 seconds after a period of inactivity.
 
 ## 3. About the Project
 
